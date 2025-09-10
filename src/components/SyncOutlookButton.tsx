@@ -14,8 +14,9 @@ export default function SyncOutlookButton() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setMessage(`Imported ${data.imported} messages`);
-    } catch (e: any) {
-      setMessage(e.message || 'Failed to sync');
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e.message : 'Failed to sync';
+      setMessage(error);
     } finally {
       setLoading(false);
     }

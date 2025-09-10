@@ -12,7 +12,7 @@ export async function sendLeadNotification(lead: LeadPayload) {
   const discordWebhook = process.env.DISCORD_WEBHOOK_URL;
   const message = `New qualified lead: ${lead.name || "Unknown"} (${lead.email || ""})\nCompany: ${lead.company || "-"}\nBudget: ${lead.budget || "-"}\nConfidence: ${lead.confidence ?? "-"}\nMeeting: ${lead.meeting_link || "-"}`;
 
-  const tasks: Promise<any>[] = [];
+  const tasks: Promise<Response>[] = [];
   if (slackWebhook) {
     tasks.push(
       fetch(slackWebhook, {

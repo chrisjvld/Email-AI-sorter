@@ -1,29 +1,50 @@
 import { google } from "googleapis";
 
-export async function fetchRecentMessages(accessToken: string) {
+interface GmailMessage {
+  id: string;
+  threadId: string | undefined;
+  payload: {
+    headers?: Array<{ name: string; value: string }>;
+    parts?: Array<{
+      mimeType?: string;
+      body?: { data?: string };
+      parts?: Array<{
+        mimeType?: string;
+        body?: { data?: string };
+        parts?: Array<{
+          mimeType?: string;
+          body?: { data?: string };
+        }>;
+      }>;
+    }>;
+  };
+  snippet: string | undefined;
+}
+
+export async function fetchRecentMessages(accessToken: string): Promise<GmailMessage[]> {
   const auth = new google.auth.OAuth2();
   auth.setCredentials({ access_token: accessToken });
   const gmail = google.gmail({ version: "v1", auth });
 
   const list = await gmail.users.messages.list({ userId: "me", maxResults: 25, q: "newer_than:30d" });
   const messages = list.data.messages || [];
-  const results = [] as Array<{
-    id: string;
-    threadId: string | undefined;
-    payload: any;
-    snippet: string | undefined;
-  }>;
+  const results: GmailMessage[] = [];
 
   for (const m of messages) {
     if (!m.id) continue;
     const msg = await gmail.users.messages.get({ userId: "me", id: m.id, format: "full" });
-    results.push({ id: m.id, threadId: msg.data.threadId, payload: msg.data.payload, snippet: msg.data.snippet });
+    results.push({ 
+      id: m.id, 
+      threadId: msg.data.threadId, 
+      payload: msg.data.payload as GmailMessage['payload'], 
+      snippet: msg.data.snippet 
+    });
   }
 
   return results;
 }
 
-export function parseMessage(payload: any) {
+export function parseMessage(payload: GmailMessage['payload']) {
   const headers = (payload?.headers || []) as Array<{ name: string; value: string }>;
   const getHeader = (n: string) => headers.find((h) => h.name?.toLowerCase() === n.toLowerCase())?.value || "";
   const subject = getHeader("Subject");
